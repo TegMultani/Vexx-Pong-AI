@@ -42,8 +42,8 @@ class DQNAgent:
             qValues = self.model(state)
             return torch.argmax(qValues).item()
 
-    def memorize(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+    def memorize(self, state, action, reward, nextState, done):
+        self.memory.append((state, action, reward, nextState, done))
 
     def train_step(self):
         if len(self.memory) < self.batchSize:

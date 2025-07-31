@@ -19,8 +19,8 @@ class DQN(nn.Module):
             nn.Linear(HIDDEN_LAYER_SIZE, outputSize)
         )
 
-        def forward(self, x): # x is game state, returns 3 action scores
-            return self.model(x)
+    def forward(self, x): # x is game state, returns 3 action scores
+        return self.model(x)
 
 class DQNAgent:
     def __init__(self):
@@ -45,18 +45,18 @@ class DQNAgent:
     def memorize(self, state, action, reward, nextState, done):
         self.memory.append((state, action, reward, nextState, done))
 
-    def train_step(self):
+    def trainStep(self):
         if len(self.memory) < self.batchSize:
             return
 
         batch = random.sample(self.memory, self.batchSize)
         states, actions, rewards, nextStates, dones = zip(*batch)
 
-        states = torch.tensor(states, dtype=torch.float32)
+        states = torch.tensor(np.array(states), dtype=torch.float32)
         actions = torch.tensor(actions)
         rewards = torch.tensor(rewards, dtype=torch.float32)
-        nextStates = torch.tensor(nextStates, dtype=torch.float32)
-        dones = torch.tensor(dones, dtype=torch.bool)
+        nextStates = torch.tensor(np.array(nextStates), dtype=torch.float32)
+        dones = torch.tensor(dones, dtype=torch.float32)
 
         qValues = self.model(states)
         nextQValues = self.target(nextStates).detach()

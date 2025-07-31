@@ -16,9 +16,14 @@ for episode in range(episodes):
     score = 0
 
     while not done:
-        action = agent.act(state)
-        nextState, reward, done = env.step(action)
-        agent.memorize(state, action, reward, nextState, done)
+        aiAction = agent.act(state)
+        trainingBotAction = 0
+        if env.ball.y > env.player.y:
+            trainingBotAction = 2
+        elif env.ball.y < env.player.y:
+            trainingBotAction = 1
+        nextState, reward, done = env.step(aiAction, trainingBotAction)
+        agent.memorize(state, aiAction, reward, nextState, done)
         agent.trainStep()
         state = nextState
         score += reward

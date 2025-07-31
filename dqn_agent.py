@@ -24,6 +24,7 @@ class DQN(nn.Module):
 
 class DQNAgent:
     def __init__(self):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = DQN(6, 3)
         self.target = DQN(6, 3) 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)

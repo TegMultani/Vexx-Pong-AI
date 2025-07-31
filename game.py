@@ -37,18 +37,19 @@ class PongGame:
         ], dtype=np.float32)
     
 
-    def step(self, action_ai): # action_ai = 0 (stay), 1 (up), 2 (down)
+    def step(self, action_ai, action_player): # action = 0 (stay), 1 (up), 2 (down)
+        # Movement + Boundaries
         if action_ai == 1:
             self.ai.y -= PADDLE_SPEED
         elif action_ai == 2:
             self.ai.y += PADDLE_SPEED
-
-        # Boundaries
         self.ai.y = max(0, min(SCREEN_HEIGHT - 60, self.ai.y))
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP]: self.player.y -= 5
-        if keys[pygame.K_DOWN]: self.player.y += 5
-        self.player.y = max(0, min(SCREEN_HEIGHT - 70, self.player.y))
+
+        if action_player == 1:
+            self.player.y -= PADDLE_SPEED
+        elif action_player == 2:
+            self.player.y += PADDLE_SPEED
+        self.player.y = max(0, min(SCREEN_HEIGHT - 60, self.player.y))
 
         # Ball movement
         self.ball.x += self.ballVel[0]

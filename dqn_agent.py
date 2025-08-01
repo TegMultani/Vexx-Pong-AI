@@ -35,14 +35,20 @@ class DQNAgent:
         self.gamma = 0.99
         self.epsilon = 1.0
         self.epsilonMin = 0.01
-        self.epsilonDecay = 0.9975
+        self.epsilonDecay = 0.995
+        self.epsilonActive = True
 
         self.updateTarget()
 
     def act(self, state):
-        if random.random() < self.epsilon:
-            return random.randint(0, 2)  
-        with torch.no_grad():
+        if self.epsilonActive:
+            if random.random() < self.epsilon:
+                return random.randint(0, 2)  
+            with torch.no_grad():
+                state = torch.tensor(state, dtype=torch.float32).to(self.device)
+                qValues = self.model(state)
+                return torch.argmax(qValues).item()
+        else:
             state = torch.tensor(state, dtype=torch.float32).to(self.device)
             qValues = self.model(state)
             return torch.argmax(qValues).item()

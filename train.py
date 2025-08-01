@@ -27,7 +27,7 @@ for episode in range(episodes):
         agent.trainStep()
         state = nextState
         score += reward
-        env.render() # Uncomment to render game during training (slow)
+        # env.render() # Uncomment to render game during training (slow)
     
     agent.updateTarget()
     agent.epsilon = max(agent.epsilonMin, agent.epsilon * agent.epsilonDecay)

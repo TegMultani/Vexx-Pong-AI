@@ -6,6 +6,8 @@ import numpy as np
 from collections import deque
 
 HIDDEN_LAYER_SIZE = 128
+LEARNING_RATE = 0.0005
+MEMORY_SIZE = 50000
 
 class DQN(nn.Module):
 
@@ -25,21 +27,23 @@ class DQN(nn.Module):
 class DQNAgent:
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = DQN(6, 3)
-        self.target = DQN(6, 3) 
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.memory = deque(maxlen=10000)
+        self.model = DQN(6, 3).to(self.device)
+        self.target = DQN(6, 3).to(self.device)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        self.memory = deque(maxlen=MEMORY_SIZE)
         self.batchSize = 64
         self.gamma = 0.99
         self.epsilon = 1.0
-        self.epsilonMin = 0.1
-        self.epsilonDecay = 0.995
+        self.epsilonMin = 0.01
+        self.epsilonDecay = 0.9975
+
+        self.updateTarget()
 
     def act(self, state):
         if random.random() < self.epsilon:
             return random.randint(0, 2)  
         with torch.no_grad():
-            state = torch.tensor(state, dtype=torch.float32)
+            state = torch.tensor(state, dtype=torch.float32).to(self.device)
             qValues = self.model(state)
             return torch.argmax(qValues).item()
 
@@ -53,11 +57,11 @@ class DQNAgent:
         batch = random.sample(self.memory, self.batchSize)
         states, actions, rewards, nextStates, dones = zip(*batch)
 
-        states = torch.tensor(np.array(states), dtype=torch.float32)
-        actions = torch.tensor(actions)
-        rewards = torch.tensor(rewards, dtype=torch.float32)
-        nextStates = torch.tensor(np.array(nextStates), dtype=torch.float32)
-        dones = torch.tensor(dones, dtype=torch.float32)
+        states = torch.tensor(np.array(states), dtype=torch.float32).to(self.device)
+        actions = torch.tensor(actions).to(self.device)
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
+        nextStates = torch.tensor(np.array(nextStates), dtype=torch.float32).to(self.device)
+        dones = torch.tensor(dones, dtype=torch.float32).to(self.device)
 
         qValues = self.model(states)
         nextQValues = self.target(nextStates).detach()

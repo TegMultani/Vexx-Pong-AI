@@ -2,12 +2,18 @@ import pygame
 import random
 import numpy as np
 
+HIT_BALL_REWARD = 0.1
+PROX_REWARD_MULTIPLIER = 0.01
+MOVEMENT_PENALTY = 0.001
+LOSING_PENALTY = 1
+WINNING_REWARD = 1
+
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-PADDLE_SPEED = 5
+PADDLE_SPEED = 10
 
 class PongGame:
     def __init__(self):
@@ -37,11 +43,15 @@ class PongGame:
         ], dtype=np.float32)
     
 
-    def step(self, action_ai, action_player): # action = 0 (stay), 1 (up), 2 (down)
+    def step(self, actionAi, action_player): # action = 0 (stay), 1 (up), 2 (down)
+        # Store previous positions for reward calculation
+        prevBallX = self.ball.x
+        prevAiCenter = self.ai.y + self.ai.height // 2
+        prevBallCenter = self.ball.y + self.ball.height // 2
         # Movement + Boundaries
-        if action_ai == 1:
+        if actionAi == 1:
             self.ai.y -= PADDLE_SPEED
-        elif action_ai == 2:
+        elif actionAi == 2:
             self.ai.y += PADDLE_SPEED
         self.ai.y = max(0, min(SCREEN_HEIGHT - 60, self.ai.y))
 
@@ -54,23 +64,36 @@ class PongGame:
         # Ball movement
         self.ball.x += self.ballVel[0]
         self.ball.y += self.ballVel[1]
-
         if self.ball.top <= 0 or self.ball.bottom >= SCREEN_HEIGHT:
             self.ballVel[1] *= -1
 
-        if self.ball.colliderect(self.player) or self.ball.colliderect(self.ai):
+        reward = 0
+        if self.ball.colliderect(self.ai):
+            self.ballVal[0] *= -1
+            reward += HIT_BALL_REWARD
+        elif self.ball.colliderect(self.player):
             self.ballVel[0] *= -1
         
+        # Reward for staying close to ball vertically (for better positioning)
+        afterAiCenter = self.ai.y + self.ai.height // 2
+        distanceToBall = abs(prevBallCenter - afterAiCenter) # TODO: SHOULD IT BE PREVBALLCENTER OR CUR
+        maxDistance = SCREEN_HEIGHT
+        proximityReward = PROX_REWARD_MULTIPLIER * (1 - distanceToBall / maxDistance)
+        reward += proximityReward
+
+        # Small Penalty for unnecessary movement (to encourage efficiency)
+        if actionAi != 0:
+            reward -= MOVEMENT_PENALTY
+
         # Scoring
-        reward = 0
         done = False
         if self.ball.left <= 0:
             self.score["player"] += 1
-            reward = -1
+            reward -= LOSING_PENALTY
             done = True
         elif self.ball.right >= SCREEN_WIDTH:
             self.score["ai"] += 1
-            reward = 1
+            reward += WINNING_REWARD
             done = True
 
         return self.get_state(), reward, done

@@ -8,6 +8,7 @@ env = PongGame()
 agent = DQNAgent()
 agent.model.load_state_dict(torch.load("pong_ai.pt"))
 agent.model.eval()
+agent.epsilonActive = False
 
 state = env.reset()
 done = False

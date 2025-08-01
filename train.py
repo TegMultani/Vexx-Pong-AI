@@ -65,8 +65,7 @@ for episode in range(episodes):
         agent.updateTarget()
         print(f"Target network updated at episode {episode}")
 
-    if stepCount % 100 == 0:
-        agent.epsilon = max(agent.epsilonMin, agent.epsilon * agent.epsilonDecay)
+    agent.epsilon = max(agent.epsilonMin, agent.epsilon * agent.epsilonDecay)
 
     scores.append(score)
     print(f"Episode {episode+1}/{episodes} | Score: {score} | Epsilon: {agent.epsilon:.3f}")

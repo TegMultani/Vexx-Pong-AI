@@ -69,7 +69,7 @@ class PongGame:
 
         reward = 0
         if self.ball.colliderect(self.ai):
-            self.ballVal[0] *= -1
+            self.ballVel[0] *= -1
             reward += HIT_BALL_REWARD
         elif self.ball.colliderect(self.player):
             self.ballVel[0] *= -1

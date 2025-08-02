@@ -4,14 +4,20 @@ import matplotlib.pyplot as plt
 import torch
 import random
 
+env = PongGame()
+agent = DQNAgent()
+
 TRAINING_BOT_RANDOMNESS = 0.1
 MIN_DISTANCE_FROM_BALL_TO_MOVE = 20
 TARGET_UPDATE_FREQ = 100
 TRAIN_FREQ = 4
 MAX_EPISODE_STEPS = 1000
 
-env = PongGame()
-agent = DQNAgent()
+agent.HIT_BALL_REWARD = 0.1
+agent.PROX_REWARD_MULTIPLIER = 0.01
+agent.MOVEMENT_PENALTY = 0.001
+agent.LOSING_PENALTY = 1
+agent.WINNING_REWARD = 1
 
 scores = []
 episodes = 2000

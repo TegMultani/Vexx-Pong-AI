@@ -1,6 +1,7 @@
 import pygame
 import random
 import numpy as np
+from torch import normal
 
 HIT_BALL_REWARD = 0.1
 PROX_REWARD_MULTIPLIER = 0.01
@@ -70,9 +71,19 @@ class PongGame:
         reward = 0
         if self.ball.colliderect(self.ai):
             self.ballVel[0] *= -1
+            # Where on the paddle the ball hit (-1 to 1)
+            relativeIntersectY = (self.ai.y + self.ai.height / 2) - (self.ball.y + self.ball.height / 2)
+            normalizedIntersectY = relativeIntersectY / (self.ai.height / 2)
+            # Prevent extreme angles -1 -> 1
+            normalizedIntersectY = max(-1, min(1, normalizedIntersectY))
+            self.ballVel[1] = normalizedIntersectY * 6 # Max y velocity
             reward += HIT_BALL_REWARD
         elif self.ball.colliderect(self.player):
             self.ballVel[0] *= -1
+            relativeIntersectY = (self.player.y + self.player.height / 2) - (self.ball.y + self.ball.height / 2)
+            normalizedIntersectY = relativeIntersectY / (self.player.height / 2)
+            normalizedIntersectY = max(-1, min(1, normalizedIntersectY))
+            self.ballVel[1] = normalizedIntersectY * 6
         
         # Reward for staying close to ball vertically (for better positioning)
         afterAiCenter = self.ai.y + self.ai.height // 2

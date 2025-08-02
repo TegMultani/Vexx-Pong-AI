@@ -19,7 +19,7 @@ class PongGame:
     def __init__(self):
         pygame.init()
         self.display = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("AI PONG BY SDOT BOYZ")
+        pygame.display.set_caption("VEXX PONG")
         self.clock = pygame.time.Clock()
         self.reset()
 

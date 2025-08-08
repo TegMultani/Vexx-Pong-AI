@@ -27,8 +27,8 @@ class DQN(nn.Module):
 class DQNAgent:
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = DQN(6, 3).to(self.device)
-        self.target = DQN(6, 3).to(self.device)
+        self.model = DQN(7, 3).to(self.device)
+        self.target = DQN(7, 3).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
         self.memory = deque(maxlen=MEMORY_SIZE)
         self.batchSize = 64
@@ -70,15 +70,18 @@ class DQNAgent:
         dones = torch.tensor(dones, dtype=torch.float32).to(self.device)
 
         qValues = self.model(states)
-        nextQValues = self.target(nextStates).detach()
+        with torch.no_grad():
+            nextQValues = self.target(nextStates)
         qTarget = qValues.clone()
 
         for i in range(self.batchSize):
             qTarget[i, actions[i]] = rewards[i] + self.gamma * torch.max(nextQValues[i]) * (1 - dones[i])
 
-        loss = nn.functional.mse_loss(qValues, qTarget)
+        loss = nn.functional.smooth_l1_loss(qValues, qTarget)
         self.optimizer.zero_grad()
         loss.backward()
+        # Gradient clipping for stability
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=5.0)
         self.optimizer.step()
 
     def updateTarget(self):

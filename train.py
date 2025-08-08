@@ -4,23 +4,35 @@ import matplotlib.pyplot as plt
 import torch
 import random
 
-env = PongGame()
+# Configure environment and training curriculum
+env = PongGame(
+    hit_ball_reward=0.2,
+    prox_reward_multiplier=0.05,
+    movement_penalty=0.001,
+    losing_penalty=1.0,
+    winning_reward=1.0,
+    ai_paddle_speed=10,
+    player_paddle_speed=8,
+)
 agent = DQNAgent()
 
-TRAINING_BOT_RANDOMNESS = 0.1
+# Opponent curriculum (smooth, per-step)
+TRAINING_BOT_RANDOMNESS_START = 0.30
+TRAINING_BOT_RANDOMNESS_END = 0.05
+TRAINING_BOT_SPEED_START = 8.0
+TRAINING_BOT_SPEED_END = 10.0
+CURRICULUM_STEPS = 300_000  # steps to reach end values
+
 MIN_DISTANCE_FROM_BALL_TO_MOVE = 20
-TARGET_UPDATE_FREQ = 100
+TARGET_UPDATE_FREQ_STEPS = 2000
 TRAIN_FREQ = 4
 MAX_EPISODE_STEPS = 1000
 
-agent.HIT_BALL_REWARD = 0.1
-agent.PROX_REWARD_MULTIPLIER = 0.01
-agent.MOVEMENT_PENALTY = 0.001
-agent.LOSING_PENALTY = 1
-agent.WINNING_REWARD = 1
+# Keep epsilon decay reasonably slow to ensure exploration (per-step decay)
+agent.epsilonDecay = 0.9995
 
 scores = []
-episodes = 2000
+episodes = 3000
 stepCount = 0
 
 for episode in range(episodes):
@@ -34,6 +46,19 @@ for episode in range(episodes):
         episodeSteps += 1
 
         aiAction = agent.act(state)
+
+        # Smooth curriculum: interpolate randomness and speed based on total steps
+        progress = min(1.0, stepCount / CURRICULUM_STEPS)
+        TRAINING_BOT_RANDOMNESS = (
+            TRAINING_BOT_RANDOMNESS_START * (1.0 - progress)
+            + TRAINING_BOT_RANDOMNESS_END * progress
+        )
+        TRAINING_BOT_SPEED = (
+            TRAINING_BOT_SPEED_START
+            + (TRAINING_BOT_SPEED_END - TRAINING_BOT_SPEED_START) * progress
+        )
+        # Apply opponent speed to environment
+        env.player_paddle_speed = TRAINING_BOT_SPEED
 
         # Training Bot with some randomness
         trainingBotAction = 0
@@ -57,6 +82,14 @@ for episode in range(episodes):
         # Train every TRAIN_FREQ steps
         if stepCount % TRAIN_FREQ == 0:
             agent.trainStep()
+
+        # Update target network on a step schedule for smoother updates
+        if stepCount % TARGET_UPDATE_FREQ_STEPS == 0:
+            agent.updateTarget()
+            print(f"Target network updated at step {stepCount}")
+
+        # Per-step epsilon decay
+        agent.epsilon = max(agent.epsilonMin, agent.epsilon * agent.epsilonDecay)
         
         state = nextState
         score += reward
@@ -66,15 +99,10 @@ for episode in range(episodes):
         if episodeSteps > MAX_EPISODE_STEPS:
             done = True
     
-    # Update target network every UPDATE_TARGET_FREQ episodes
-    if episode % TARGET_UPDATE_FREQ == 0:
-        agent.updateTarget()
-        print(f"Target network updated at episode {episode}")
-
-    agent.epsilon = max(agent.epsilonMin, agent.epsilon * agent.epsilonDecay)
+    # (moved target update and epsilon decay into step loop)
 
     scores.append(score)
-    print(f"Episode {episode+1}/{episodes} | Score: {score} | Epsilon: {agent.epsilon:.3f}")
+    print(f"Episode {episode+1}/{episodes} | Score: {score:.3f} | Epsilon: {agent.epsilon:.3f} | BotRnd: {TRAINING_BOT_RANDOMNESS:.3f} | BotSpd: {TRAINING_BOT_SPEED:.3f}")
 
 
 torch.save(agent.model.state_dict(), "pong_ai.pt")
